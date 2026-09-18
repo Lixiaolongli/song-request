@@ -296,14 +296,7 @@ function hostAction(action, body) {
   return false;
 }
 
-function serveStatic(req, res, pathname) {
-  let rel = pathname === '/' ? '/index.html' : pathname;
-  if (rel === '/host') rel = '/host.html';
-  const target = path.join(PUBLIC_DIR, path.normalize(rel).replace(/^(\.\.[/\\])+/, ''));
-  if (!target.startsWith(PUBLIC_DIR)) {
-    json(res, 403, { error: 'forbidden' });
-    return;
-  }
+function streamFile(res, target) {
   fs.stat(target, (err, stat) => {
     if (err || !stat.isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -317,6 +310,23 @@ function serveStatic(req, res, pathname) {
     });
     fs.createReadStream(target).pipe(res);
   });
+}
+
+function serveStatic(req, res, pathname) {
+  let rel = pathname === '/' ? '/index.html' : pathname;
+  if (rel === '/host') rel = '/host.html';
+  // 打赏收款码放 data/ 下：不进版本库，重新部署也不会被覆盖；
+  // 没放图片时这里 404，观众端的打赏卡片会自动隐藏
+  if (rel === '/tip.png') {
+    streamFile(res, path.join(DATA_DIR, 'tip.png'));
+    return;
+  }
+  const target = path.join(PUBLIC_DIR, path.normalize(rel).replace(/^(\.\.[/\\])+/, ''));
+  if (!target.startsWith(PUBLIC_DIR)) {
+    json(res, 403, { error: 'forbidden' });
+    return;
+  }
+  streamFile(res, target);
 }
 
 const server = http.createServer(async (req, res) => {

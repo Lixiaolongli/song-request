@@ -1,5 +1,6 @@
 node_modules/
 data/queue.json
+data/tip.png
 logs/
 npm-debug.log*
 .DS_Store

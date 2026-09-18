@@ -227,4 +227,8 @@
   $('sendBtn').addEventListener('click', submit);
   $('mask').addEventListener('click', function (e) { if (e.target === $('mask')) closeSheet(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
+  // 打赏卡片：服务器放了 data/tip.png 才显示，404 时保持隐藏
+  $('tipImg').addEventListener('load', function () { $('tipCard').hidden = false; });
+  $('tipImg').addEventListener('error', function () { $('tipCard').hidden = true; });
 })();

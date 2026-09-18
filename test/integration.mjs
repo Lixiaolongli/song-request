@@ -120,6 +120,13 @@ try {
   const offenders = ['app.js', 'host.js'].filter((f) => unsafe.test(fs.readFileSync(path.join(DIR, 'public', f), 'utf8')));
   ok('前端未用 innerHTML 等不安全写入（防存储型 XSS）', offenders.length === 0, offenders.join(', '));
 
+  const tipMissing = await fetch(BASE + '/tip.png');
+  ok('未放收款码时 /tip.png 404（观众端卡片自动隐藏）', tipMissing.status === 404, `status=${tipMissing.status}`);
+  fs.writeFileSync(path.join(TMP, 'tip.png'), Buffer.from('89504e470d0a1a0a', 'hex'));
+  const tipNow = await fetch(BASE + '/tip.png');
+  ok('放收款码后 /tip.png 返回 image/png', tipNow.status === 200 && tipNow.headers.get('content-type') === 'image/png',
+    `status=${tipNow.status} type=${tipNow.headers.get('content-type')}`);
+
   // ── 2. 连接与初始状态 ──
   console.log('\n[2] 连接与初始状态');
   const A = sse(`${BASE}/api/events?clientId=cidAAA`);
