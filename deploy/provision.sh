@@ -66,6 +66,18 @@ else
   log "Node 安装完成：$(node -v)"
 fi
 
+# 非 root 跑服务时监听 80 会 EACCES；云防火墙默认只放行 22/80/443，
+# 换端口还得回控制台加规则，所以给 node 二进制授绑定低端口的能力。
+# 注意：能力跟着二进制文件走，以后升级 Node 要重新跑这一步。
+if [ "$(id -u)" != "0" ]; then
+  node_bin=$(readlink -f "$(command -v node)")
+  if $SUDO setcap 'cap_net_bind_service=+ep' "$node_bin" 2>/dev/null; then
+    log "已给 $node_bin 授予 cap_net_bind_service（非 root 可监听 80）"
+  else
+    log "⚠️  setcap 失败，非 root 监听不了 1024 以下端口，请改用 PORT=1024 以上部署"
+  fi
+fi
+
 # ── 2. npm 换国内镜像 ──
 current_registry=$(npm config get registry 2>/dev/null || echo "")
 if [ "$current_registry" != "https://registry.npmmirror.com" ]; then
@@ -81,6 +93,9 @@ if command -v pm2 >/dev/null 2>&1; then
 else
   log "安装 pm2…"
   $SUDO npm install -g pm2 >/dev/null || die "pm2 安装失败"
+  # tarball 装的 Node 会把 npm 全局 prefix 指向它自己的目录，-g 的包不进 PATH，
+  # 这里按实际 prefix 把 pm2 软链到 /usr/local/bin
+  $SUDO ln -sfn "$($SUDO npm prefix -g)/bin/pm2" /usr/local/bin/pm2
   log "pm2 安装完成：$(pm2 -v 2>/dev/null | tail -1)"
 fi
 
