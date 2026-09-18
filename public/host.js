@@ -10,6 +10,22 @@
     return node;
   }
 
+  // 与观众端同一套取色规则，保证同一个分类在两端颜色一致
+  var TAG_PALETTE = [335, 265, 195, 145, 15, 290, 215, 95, 350, 38];
+  var tagHueMap = {};
+  function hueOf(s) {
+    if (!(s in tagHueMap)) {
+      tagHueMap[s] = TAG_PALETTE[Object.keys(tagHueMap).length % TAG_PALETTE.length];
+    }
+    return tagHueMap[s];
+  }
+
+  function tagPill(text) {
+    var t = el('span', 'tag', text);
+    t.style.setProperty('--h', String(hueOf(text)));
+    return t;
+  }
+
   var toastTimer = null;
   function toast(msg, isErr) {
     var t = $('toast');
@@ -187,7 +203,9 @@
     state.songs.forEach(function (s) {
       var row = el('div', 'qrow');
       var info = el('div', 'info');
-      info.appendChild(el('div', 't', s.title + (s.tag ? '　#' + s.tag : '')));
+      var t = el('div', 't', s.title);
+      if (s.tag) t.appendChild(tagPill(s.tag));
+      info.appendChild(t);
       info.appendChild(el('div', 'm', s.artist || '—'));
       row.appendChild(info);
       var acts = el('div', 'acts');

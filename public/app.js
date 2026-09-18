@@ -44,6 +44,22 @@
     return node;
   }
 
+  // 分类按出现顺序从调色板取色：哈希取色容易让相邻分类撞成同一种颜色
+  var TAG_PALETTE = [335, 265, 195, 145, 15, 290, 215, 95, 350, 38];
+  var tagHueMap = {};
+  function hueOf(s) {
+    if (!(s in tagHueMap)) {
+      tagHueMap[s] = TAG_PALETTE[Object.keys(tagHueMap).length % TAG_PALETTE.length];
+    }
+    return tagHueMap[s];
+  }
+
+  function tagPill(text) {
+    var t = el('span', 'tag', text);
+    t.style.setProperty('--h', String(hueOf(text)));
+    return t;
+  }
+
   function myStatus(songId) {
     var mine = state.mine || [];
     for (var i = 0; i < mine.length; i++) {
@@ -54,6 +70,7 @@
 
   function renderNow() {
     var np = state.nowPlaying;
+    $('now').classList.toggle('playing', !!np);
     $('nowIdle').hidden = !!np;
     $('nowInfo').hidden = !np;
     if (np) {
@@ -110,6 +127,7 @@
     list.forEach(function (t) {
       var chip = el('button', 'chip' + (t === activeTag ? ' active' : ''), t);
       chip.type = 'button';
+      if (t !== '全部') chip.style.setProperty('--h', String(hueOf(t)));
       chip.addEventListener('click', function () {
         activeTag = t;
         renderChips();
@@ -137,7 +155,9 @@
       btn.type = 'button';
 
       var meta = el('div', 'meta');
-      meta.appendChild(el('div', 'name', s.title));
+      var name = el('div', 'name', s.title);
+      if (s.tag && activeTag === '全部') name.appendChild(tagPill(s.tag));
+      meta.appendChild(name);
       meta.appendChild(el('div', 'who', s.artist || ''));
       btn.appendChild(meta);
       btn.appendChild(el('div', 'go', picked ? (picked.status === 'playing' ? '正在唱' : '已点') : '点歌'));
