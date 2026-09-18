@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0d13">
+<title>主持人控制台 · 扫码点歌</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="wrap wrap-wide">
+
+  <header class="top" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div>
+      <h1>🎛 主持人控制台</h1>
+      <p class="sub">观众扫码点歌后，队列会实时出现在这里</p>
+    </div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">已连接</span></span>
+  </header>
+
+  <div id="gate" class="card" hidden>
+    <h3 style="margin:0 0 6px;font-size:17px">需要主持人密钥</h3>
+    <p class="sub" style="margin:0 0 14px">密钥在服务端启动时打印，格式类似 <code>k1a2b3c4d5</code></p>
+    <div class="row">
+      <input type="text" id="gateKey" placeholder="输入主持人密钥" autocomplete="off">
+      <button class="btn-primary" id="gateBtn" type="button" style="flex:0 0 auto">进入</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+
+    <div class="stat">
+      <div><div class="n" id="stWait">0</div><div class="l">待唱</div></div>
+      <div><div class="n" id="stDone">0</div><div class="l">已唱</div></div>
+      <div><div class="n" id="stSongs">0</div><div class="l">歌单</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="switch">
+        <div>
+          <div style="font-weight:600;font-size:15px">开放点歌</div>
+          <div class="sub" style="margin-top:2px" id="acceptHint">观众现在可以扫码点歌</div>
+        </div>
+        <button class="toggle on" id="acceptToggle" type="button" aria-label="开放或暂停点歌"></button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="queue" type="button">队列</button>
+      <button class="tab" data-tab="songs" type="button">歌单管理</button>
+      <button class="tab" data-tab="qr" type="button">二维码</button>
+    </div>
+
+    <section id="tab-queue">
+      <div class="section-title">
+        <span>正在演唱</span>
+      </div>
+      <div id="playingBox"></div>
+
+      <div class="section-title">
+        <span>待唱队列</span>
+        <span class="sub" id="waitHint" style="margin:0"></span>
+      </div>
+      <div id="waitBox"></div>
+
+      <div class="section-title">
+        <span>已结束</span>
+        <span style="display:flex;gap:8px">
+          <button class="btn-sm" id="clearDoneBtn" type="button">清空已结束</button>
+          <button class="btn-sm" id="clearAllBtn" type="button">清空全部</button>
+        </span>
+      </div>
+      <div id="doneBox"></div>
+    </section>
+
+    <section id="tab-songs" hidden>
+      <div class="card" style="margin-bottom:14px">
+        <div class="section-title" style="margin-top:0">添加歌曲</div>
+        <div class="field"><label for="newTitle">歌名 *</label><input type="text" id="newTitle" maxlength="60" placeholder="必填"></div>
+        <div class="row">
+          <div class="field" style="flex:1;margin-bottom:0"><label for="newArtist">歌手</label><input type="text" id="newArtist" maxlength="40" placeholder="选填"></div>
+          <div class="field" style="flex:0 0 110px;margin-bottom:0"><label for="newTag">分类</label><input type="text" id="newTag" maxlength="12" placeholder="民谣"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn-primary" id="addSongBtn" type="button" style="width:100%">加入歌单</button></div>
+      </div>
+      <div class="section-title"><span>当前歌单</span><span class="sub" id="songCount" style="margin:0"></span></div>
+      <div id="songBox"></div>
+    </section>
+
+    <section id="tab-qr" hidden>
+      <div class="card qrbox">
+        <div class="section-title" style="justify-content:center;margin-top:0">观众点歌二维码</div>
+        <div id="qrImg"></div>
+        <div class="urlbox" id="qrUrl">加载中…</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn-ghost" id="copyUrlBtn" type="button" style="flex:1">复制地址</button>
+          <button class="btn-ghost" id="dlQrBtn" type="button" style="flex:1">下载二维码</button>
+        </div>
+        <p class="sub" style="margin-top:14px;text-align:left">
+          二维码指向当前访问域名。如果现场用内网穿透或云服务器，请用公网地址打开本控制台，二维码才会跟着变成公网地址；也可以用 <code>PUBLIC_URL</code> 环境变量强制指定。
+        </p>
+      </div>
+
+      <div class="card qrbox" style="margin-top:16px">
+        <div class="section-title" style="justify-content:center;margin-top:0">控制台二维码（自己用）</div>
+        <div id="qrImgHost"></div>
+        <div class="urlbox" id="qrUrlHost">加载中…</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn-ghost" id="copyUrlHostBtn" type="button" style="flex:1">复制地址</button>
+          <button class="btn-ghost" id="dlQrHostBtn" type="button" style="flex:1">下载二维码</button>
+        </div>
+        <p class="sub" style="margin-top:14px;text-align:left">
+          扫这个可以在手机或平板上直接打开控制台，密钥已经带在链接里，不用再手输。<strong>别把这个码贴给观众</strong>，拿到它的人能改队列。
+        </p>
+      </div>
+    </section>
+
+    <footer class="note">
+      队列与歌单会自动保存在服务端 <code>data/</code> 目录，重启不丢。<br>
+      观众端每人最多同时排 2 首，可在服务端用 <code>MAX_PENDING</code> 调整。
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/host.js"></script>
+</body>
+</html>
